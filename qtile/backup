@@ -32,7 +32,16 @@ from libqtile.lazy import lazy
 from libqtile.utils import guess_terminal
 
 mod = "mod4"
-terminal = guess_terminal()
+terminal = "alacritty"
+
+from libqtile import hook
+@hook.subscribe.startup_once
+def autostart():
+    processes = [
+        ["feh", "--bg-scale", "/home/danr/Pictures/dnord4k_dark.png"],
+        ["xrandr", "--output", "DP-2", "--mode", "1920x1080", "--right-of", "DP-3"],
+        ["synergy"],
+    ]
 
 keys = [
     # Switch between windows

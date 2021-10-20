@@ -1,3 +1,29 @@
+# Copyright (c) 2010 Aldo Cortesi
+# Copyright (c) 2010, 2014 dequis
+# Copyright (c) 2012 Randall Ma
+# Copyright (c) 2012-2014 Tycho Andersen
+# Copyright (c) 2012 Craig Barnes
+# Copyright (c) 2013 horsik
+# Copyright (c) 2013 Tao Sauvage
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
 # GTK theme installed with lxappearance, saved under ~/.themes/
 # https://github.com/EliverLara/Nordic
 
@@ -5,11 +31,9 @@
 # https://github.com/alacritty/alacritty
 # https://github.com/alacritty/alacritty/wiki/Color-schemes
 
-import os, subprocess
-from libqtile import hook
 from typing import List  # noqa: F401
 
-from libqtile import bar, layout, widget
+from libqtile import bar, layout, widget, hook
 from libqtile.config import Click, Drag, Group, Key, Match, Screen, KeyChord
 from libqtile.lazy import lazy
 
@@ -21,6 +45,7 @@ from libqtile.lazy import lazy
 
 mod = "mod4"
 terminal = "alacritty"
+
 
 keys = [
     # Switch between windows
@@ -65,64 +90,56 @@ keys = [
     Key([mod, "control"], "r", lazy.restart(), desc="Restart Qtile"),
     Key([mod, "control"], "q", lazy.shutdown(), desc="Shutdown Qtile"),
     Key([mod], "space", lazy.spawn("rofi -show drun")),
-    Key([mod], "c", lazy.spawn("kitty vi ~/test")),
 ]
 
+groups = [Group(i) for i in "123456789"]
 
-groups = [
-    Group("Teams"),
-    Group("Web"),
-    Group("R"),
-    Group("Terminals"),
-    Group("5"),
-    Group("6"),
-    Group("7"),
-    Group("8"),
-    Group("9"),
-    Group("10"),
-]
+for i in groups:
+    keys.extend(
+        [
+            # mod1 + letter of group = switch to group
+            Key(
+                [mod],
+                i.name,
+                lazy.group[i.name].toscreen(),
+                desc="Switch to group {}".format(i.name),
+            ),
+            # mod1 + shift + letter of group = switch to & move focused window to group
+            Key(
+                [mod, "shift"],
+                i.name,
+                lazy.window.togroup(i.name, switch_group=True),
+                desc="Switch to & move focused window to group {}".format(i.name),
+            ),
+            # Or, use below if you prefer not to switch to that group.
+            # # mod1 + shift + letter of group = move focused window to group
+            # Key([mod, "shift"], i.name, lazy.window.togroup(i.name),
+            #     desc="move focused window to group {}".format(i.name)),
+        ]
+    )
+# groups = [
+#     Group("Teams"),
+#     Group("Web"),
+#     Group("R"),
+#     Group("Terminals"),
+#     Group("5"),
+#     Group("6"),
+#     Group("7"),
+#     Group("8"),
+#     Group("9"),
+#     Group("10"),
+# ]
 
 
-# Allow MODKEY+[0 through 9] to bind to groups, see
-# https://docs.qtile.org/en/stable/manual/config/groups.html
-# MOD4 + index Number : Switch to Group[index]
-# MOD4 + shift + index Number : Send active window to another Group
-from libqtile.dgroups import simple_key_binder
+# # Allow MODKEY+[0 through 9] to bind to groups, see
+# # https://docs.qtile.org/en/stable/manual/config/groups.html
+# # MOD4 + index Number : Switch to Group[index]
+# # MOD4 + shift + index Number : Send active window to another Group
+# from libqtile.dgroups import simple_key_binder
 
-dgroups_key_binder = simple_key_binder(mod)
+# dgroups_key_binder = simple_key_binder(mod)
 
-
-#   groups = [Group(i) for i in "123456789"]
-#
-#   for i in groups:
-#       keys.extend(
-#           [
-#               # mod1 + letter of group = switch to group
-#   groups = [Group(i) for i in "123456789"]
-#
-#   for i in groups:
-#       keys.extend(
-#           [
-#               # mod1 + letter of group = switch to group
-#               Key(
-#                   [mod],
-#                   i.name,
-#                   lazy.group[i.name].toscreen(),
-#                   desc="Switch to group {}".format(i.name),
-#               ),
-#               # mod1 + shift + letter of group = switch to & move focused window to group
-#               Key(
-#                   [mod, "shift"],
-#                   i.name,
-#                   lazy.window.togroup(i.name, switch_group=False),
-#                   desc="Switch to & move focused window to group {}".format(i.name),
-#               ),
-#               # Or, use below if you prefer not to switch to that group.
-#               # # mod1 + shift + letter of group = move focused window to group
-#               # Key([mod, "shift"], i.name, lazy.window.togroup(i.name),
-#               #     desc="move focused window to group {}".format(i.name)),
-#           ]
-#       )
+dgroups_key_binder = None
 MARGIN = 10
 
 layouts = [
@@ -134,7 +151,7 @@ layouts = [
     # layout.Stack(num_stacks=2),
     # layout.Bsp(),
     # layout.Matrix(),
-    # layout.MonadTall(ratio=0.7, margin=MARGIN),
+    layout.MonadTall(ratio=0.7, margin=MARGIN),
     # layout.MonadWide(),
     # layout.RatioTile(),
     # layout.Tile(),
@@ -212,7 +229,7 @@ reconfigure_screens = True
 # focus, should we respect this or not?
 auto_minimize = False
 
-
+import subprocess
 @hook.subscribe.startup_once
 def autostart():
     processes = [
@@ -221,6 +238,8 @@ def autostart():
         ["synergy"],
     ]
 
+    for p in processes:
+        subprocess.Popen(p)
 
 # string besides java UI toolkits; you can see several discussions on the
 # mailing lists, GitHub issues, and other WM documentation that suggest setting
